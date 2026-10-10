@@ -1,78 +1,115 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport"
-          content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#ffffff">
-
     <title>finally</title>
-
     <link rel="manifest" href="./manifest.json">
     <link rel="icon" href="./icons/icon-192.png">
-    <link rel="stylesheet" href="./style.css">
-
-    <script src="./storage.js" defer></script>
-    <script src="./app.js" defer></script>
+    <link rel="stylesheet" href="./style.css?v=5">
+    <script src="./storage.js?v=5" defer></script>
+    <script src="./app.js?v=5" defer></script>
 </head>
 <body>
 <main class="app">
-    <header>
+    <header class="brand">
         <h1>finA\\y</h1>
         <p class="tagline">track and find out</p>
     </header>
 
     <nav class="tabs" aria-label="Main navigation">
-        <button id="eventsTab"
-                class="tab active"
-                aria-selected="true">
-            Events
-        </button>
-        <button id="analysisTab"
-                class="tab"
-                aria-selected="false">
-            Analysis
-        </button>
+        <button id="eventsTab" class="tab active" type="button" aria-current="page">Events</button>
+        <button id="analysisTab" class="tab" type="button">Analysis</button>
     </nav>
 
-    <section id="eventsView">
+    <section id="eventsView" aria-label="Events">
+        <div class="events-toolbar">
+            <span id="eventsModeLabel">Tap an event to record it</span>
+            <button id="editModeButton" class="edit-mode-button" type="button" aria-pressed="false">Edit</button>
+        </div>
         <div id="eventGrid" class="event-grid"></div>
     </section>
 
-    <section id="analysisView" hidden>
+    <section id="analysisView" aria-label="Analysis" hidden>
         <h2>Event statistics</h2>
         <div id="statistics"></div>
     </section>
 </main>
 
-<dialog id="eventTypeDialog">
+<dialog id="eventTypeDialog" aria-labelledby="newEventTitle">
     <form id="eventTypeForm">
-        <h2>New event type</h2>
-
+        <h2 id="newEventTitle">New event type</h2>
         <label for="eventName">Name</label>
-        <input id="eventName"
-               type="text"
-               maxlength="40"
-               required
-               placeholder="e.g. Coffee">
-
+        <input id="eventName" type="text" maxlength="40" required placeholder="e.g. Coffee">
         <label for="eventIcon">Icon (emoji)</label>
-        <input id="eventIcon"
-               type="text"
-               maxlength="12"
-               placeholder="☕">
+        <input id="eventIcon" type="text" maxlength="12" placeholder="☕">
+
+        <label for="eventDescription">Description (optional)</label>
+        <textarea id="eventDescription"
+                  rows="3"
+                  placeholder="What does this event represent?"></textarea>
+
+        <label for="eventHorizon">Influence horizon (optional)</label>
+        <div class="horizon-input">
+            <input id="eventHorizon"
+                   type="number"
+                   min="0"
+                   step="1"
+                   placeholder="e.g. 2">
+
+            <select id="eventHorizonUnit">
+                <option value="hours">Hours</option>
+                <option value="days" selected>Days</option>
+                <option value="weeks">Weeks</option>
+            </select>
+        </div>
+        <p class="field-hint">
+            How long might this event influence later observations?
+        </p>
 
         <div class="dialog-actions">
-            <button type="button"
-                    id="cancelEventType"
-                    class="secondary-button">
-                Cancel
-            </button>
-            <button type="submit"
-                    class="primary-button">
-                Create
-            </button>
+            <button type="button" id="cancelEventType" class="secondary-button">Cancel</button>
+            <button type="submit" class="primary-button">Create</button>
+        </div>
+    </form>
+</dialog>
+
+<dialog id="editEventDialog" aria-labelledby="editEventTitle">
+    <form id="editEventForm">
+        <h2 id="editEventTitle">Edit event type</h2>
+        <label for="editEventName">Name</label>
+        <input id="editEventName" type="text" maxlength="40" required>
+        <label for="editEventIcon">Icon (emoji)</label>
+        <input id="editEventIcon" type="text" maxlength="12">
+
+        <label for="editEventDescription">Description (optional)</label>
+        <textarea id="editEventDescription"
+                  rows="3"
+                  placeholder="What does this event represent?"></textarea>
+
+        <label for="editEventHorizon">Influence horizon (optional)</label>
+        <div class="horizon-input">
+            <input id="editEventHorizon"
+                   type="number"
+                   min="0"
+                   step="any"
+                   placeholder="e.g. 2">
+
+            <select id="editEventHorizonUnit">
+                <option value="hours">Hours</option>
+                <option value="days" selected>Days</option>
+                <option value="weeks">Weeks</option>
+            </select>
+        </div>
+        <p class="field-hint">
+            How long might this event influence later observations?
+        </p>
+
+        <button id="deleteEventButton" class="danger-button" type="button">Delete event type</button>
+        <div class="dialog-actions">
+            <button id="cancelEditEvent" class="secondary-button" type="button">Cancel</button>
+            <button class="primary-button" type="submit">Save changes</button>
         </div>
     </form>
 </dialog>
