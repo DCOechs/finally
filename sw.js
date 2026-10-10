@@ -1,5 +1,5 @@
 
-const CACHE_NAME = "finally-v1";
+const CACHE_NAME = "finally-v2";
 
 const APP_FILES = [
     "./",

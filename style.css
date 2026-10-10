@@ -27,16 +27,30 @@ button {
     padding: 24px 18px;
 }
 
+
+
 header {
     text-align: center;
     margin-bottom: 28px;
 }
 
-h1 {
+header h1 {
     font-size: 30px;
     font-weight: 700;
-    margin: 12px 0;
+    line-height: 1;
+    margin: 0;
 }
+
+header .tagline {
+    font-size: 12px;
+    font-weight: 400;
+    line-height: 1.2;
+    color: #888;
+    margin: 2px 0 0;
+    letter-spacing: 0.5px;
+}
+
+
 
 h2 {
     font-size: 19px;
