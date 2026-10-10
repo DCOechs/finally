@@ -448,63 +448,89 @@ function openLogEvent(type) {
 
         let input;
 
-        if (field.type === "choice") {
-            input = document.createElement("select");
 
-            const placeholder = document.createElement("option");
-            placeholder.value = "";
-            placeholder.textContent = "Select...";
-            input.appendChild(placeholder);
-
-            for (const option of field.options || []) {
-                const choice = document.createElement("option");
-                choice.value = option;
-                choice.textContent = option;
-                input.appendChild(choice);
-            }
-        } else if (field.type === "boolean") {
-            input = document.createElement("select");
-
-            for (const [value, text] of [
-                ["", "Not specified"],
-                ["true", "Yes"],
-                ["false", "No"]
-            ]) {
-                const option = document.createElement("option");
-                option.value = value;
-                option.textContent = text;
-                input.appendChild(option);
-            }
-        } else if (field.type === "text") {
-            input = document.createElement("textarea");
-            input.rows = 3;
-        } else {
+        if (field.type === "choice" || field.type === "boolean") {
             input = document.createElement("input");
-            input.type = "number";
-            input.step = "any";
+            input.type = "hidden";
+            input.id = inputId;
+            input.value = "";
 
-            if (field.type === "duration") {
-                input.min = "0";
+            const buttonGroup = document.createElement("div");
+            buttonGroup.className = "choice-buttons";
+            buttonGroup.setAttribute("role", "group");
+            buttonGroup.setAttribute("aria-label", field.label);
+
+            const options = field.type === "boolean"
+                ? [
+                    { value: "true", label: "Yes" },
+                    { value: "false", label: "No" }
+                ]
+                : (field.options || []).map(option => ({
+                    value: option,
+                    label: option
+                }));
+
+            for (const option of options) {
+                const button = document.createElement("button");
+                button.type = "button";
+                button.className = "choice-button";
+                button.textContent = option.label;
+                button.setAttribute("aria-pressed", "false");
+
+                button.addEventListener("click", () => {
+                    const alreadySelected = input.value === option.value;
+
+                    // Tapping the selected option again clears it.
+                    input.value = alreadySelected ? "" : option.value;
+
+                    for (const other of buttonGroup.children) {
+                        const selected = other === button && !alreadySelected;
+                        other.classList.toggle("selected", selected);
+                        other.setAttribute("aria-pressed", String(selected));
+                    }
+                });
+
+                buttonGroup.appendChild(button);
             }
 
-            if (field.type === "number") {
-                if (field.min != null) input.min = field.min;
-                if (field.max != null) input.max = field.max;
+            wrapper.append(label, input, buttonGroup);
+
+        } else {
+            if (field.type === "text") {
+                input = document.createElement("textarea");
+                input.rows = 3;
+            } else {
+                input = document.createElement("input");
+                input.type = "number";
+                input.step = "any";
+
+                if (field.type === "duration") {
+                    input.min = "0";
+                }
+
+                if (field.type === "number") {
+                    if (field.min != null) input.min = field.min;
+                    if (field.max != null) input.max = field.max;
+                }
             }
+
+            input.id = inputId;
+            input.required = field.required;
+
+            wrapper.append(label, input);
         }
 
-        input.id = inputId;
         input.dataset.fieldId = field.id;
         input.dataset.fieldType = field.type;
-        input.required = field.required;
 
-        wrapper.append(label, input);
-
+        // Hidden inputs do not participate in native required validation.
+        // We'll validate button selections ourselves when saving.
         if (field.unit) {
             const unit = document.createElement("small");
             unit.textContent = field.unit;
             wrapper.appendChild(unit);
         }
+
 
         logEventFields.appendChild(wrapper);
     }
@@ -524,13 +550,21 @@ logEventForm.addEventListener("submit", async event => {
         const input = document.getElementById(`log-field-${field.id}`);
         const raw = input.value.trim();
 
+
         if (raw === "") {
             if (field.required) {
-                input.focus();
+                if (field.type === "choice" || field.type === "boolean") {
+                    const group = input.parentElement.querySelector(".choice-buttons");
+                    group?.querySelector("button")?.focus();
+                    showToast(`Please select ${field.label}`);
+                } else {
+                    input.focus();
+                }
                 return;
             }
             continue;
         }
+
 
         if (field.type === "boolean") {
             values[field.id] = raw === "true";

@@ -228,3 +228,33 @@ dialog textarea {
     font-size: 12px;
     color: #888;
 }
+
+.choice-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.choice-button {
+    flex: 1 1 auto;
+    min-width: 72px;
+    padding: 12px 16px;
+    border: 1px solid #d8d8d8;
+    border-radius: 10px;
+    background: #f7f7f7;
+    color: #333;
+    font: inherit;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+}
+
+.choice-button.selected {
+    background: #222;
+    border-color: #222;
+    color: white;
+}
+
+.choice-button:focus-visible {
+    outline: 2px solid #666;
+    outline-offset: 2px;
+}
