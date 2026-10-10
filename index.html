@@ -1,0 +1,81 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#ffffff">
+
+    <title>finally</title>
+
+    <link rel="manifest" href="./manifest.json">
+    <link rel="icon" href="./icons/icon-192.png">
+    <link rel="stylesheet" href="./style.css">
+
+    <script src="./storage.js" defer></script>
+    <script src="./app.js" defer></script>
+</head>
+<body>
+<main class="app">
+    <header>
+        <h1>finally</h1>
+    </header>
+
+    <nav class="tabs" aria-label="Main navigation">
+        <button id="eventsTab"
+                class="tab active"
+                aria-selected="true">
+            Events
+        </button>
+        <button id="analysisTab"
+                class="tab"
+                aria-selected="false">
+            Analysis
+        </button>
+    </nav>
+
+    <section id="eventsView">
+        <div id="eventGrid" class="event-grid"></div>
+    </section>
+
+    <section id="analysisView" hidden>
+        <h2>Event statistics</h2>
+        <div id="statistics"></div>
+    </section>
+</main>
+
+<dialog id="eventTypeDialog">
+    <form id="eventTypeForm">
+        <h2>New event type</h2>
+
+        <label for="eventName">Name</label>
+        <input id="eventName"
+               type="text"
+               maxlength="40"
+               required
+               placeholder="e.g. Coffee">
+
+        <label for="eventIcon">Icon (emoji)</label>
+        <input id="eventIcon"
+               type="text"
+               maxlength="12"
+               placeholder="☕">
+
+        <div class="dialog-actions">
+            <button type="button"
+                    id="cancelEventType"
+                    class="secondary-button">
+                Cancel
+            </button>
+            <button type="submit"
+                    class="primary-button">
+                Create
+            </button>
+        </div>
+    </form>
+</dialog>
+
+<div id="toast" role="status" aria-live="polite"></div>
+</body>
+</html>
