@@ -14,6 +14,15 @@ const editModeButton = document.getElementById("editModeButton");
 const eventsModeLabel = document.getElementById("eventsModeLabel");
 const toast = document.getElementById("toast");
 
+const logEventDialog = document.getElementById("logEventDialog");
+const logEventForm = document.getElementById("logEventForm");
+const logEventTitle = document.getElementById("logEventTitle");
+const logEventFields = document.getElementById("logEventFields");
+
+let selectedLoggingType = null;
+
+
+
 let eventTypes = [];
 let events = [];
 let isEditMode = false;
@@ -57,6 +66,260 @@ function displayHorizon(minutes) {
 
     return { value: minutes / 60, unit: "hours" };
 }
+
+
+const customFields = {
+    create: [],
+    edit: []
+};
+
+const FIELD_TYPES = {
+    number: "Number",
+    choice: "Single choice",
+    boolean: "Yes / No",
+    duration: "Duration",
+    text: "Text"
+};
+
+function renderCustomFields(mode) {
+    const dialog = mode === "create" ? eventTypeDialog : editEventDialog;
+    const list = dialog.querySelector(".field-list");
+
+    list.replaceChildren();
+
+    for (const field of customFields[mode]) {
+        const row = document.createElement("div");
+        row.className = "custom-field-row";
+
+        const info = document.createElement("div");
+        info.className = "custom-field-info";
+
+        const name = document.createElement("strong");
+        name.textContent = field.label;
+
+        const details = document.createElement("small");
+
+        let summary = FIELD_TYPES[field.type];
+
+        if (field.type === "number" && field.unit) {
+            summary += ` · ${field.unit}`;
+        }
+
+        if (field.type === "duration") {
+            summary += ` · ${field.unit}`;
+        }
+
+        if (field.type === "choice") {
+            summary += ` · ${field.options?.length || 0} choices`;
+        }
+
+        summary += field.required ? " · Required" : " · Optional";
+
+        details.textContent = summary;
+
+        info.append(name, details);
+
+        const removeButton = document.createElement("button");
+        removeButton.type = "button";
+        removeButton.className = "remove-field-button";
+        removeButton.textContent = "×";
+        removeButton.setAttribute("aria-label", `Remove ${field.label}`);
+
+        removeButton.addEventListener("click", () => {
+            customFields[mode] = customFields[mode].filter(
+                item => item.id !== field.id
+            );
+            renderCustomFields(mode);
+        });
+
+        row.append(info, removeButton);
+        list.appendChild(row);
+    }
+}
+
+function openAddFieldEditor(mode) {
+    const dialog = mode === "create" ? eventTypeDialog : editEventDialog;
+    const section = dialog.querySelector(".custom-fields-section");
+
+    if (section.querySelector(".field-editor")) return;
+
+    const editor = document.createElement("div");
+    editor.className = "field-editor";
+
+    editor.innerHTML = `
+        <label>
+            Field name
+            <input class="field-name-input"
+                   type="text"
+                   placeholder="e.g. Intensity">
+        </label>
+
+        <label>
+            Field type
+            <select class="field-type-input">
+                <option value="number">Number</option>
+                <option value="choice">Single choice</option>
+                <option value="boolean">Yes / No</option>
+                <option value="duration">Duration</option>
+                <option value="text">Text</option>
+            </select>
+        </label>
+
+
+        <div class="field-type-settings"></div>
+
+        <label class="field-required-label">
+            <input class="field-required-input" type="checkbox">
+            Required
+        </label>
+
+
+        <div class="field-editor-actions">
+            <button type="button" class="cancel-field-button">Cancel</button>
+            <button type="button" class="save-field-button">Add field</button>
+        </div>
+    `;
+
+    section.appendChild(editor);
+
+
+    const typeSelect = editor.querySelector(".field-type-input");
+    const settingsContainer = editor.querySelector(".field-type-settings");
+
+    function renderFieldTypeSettings() {
+        const type = typeSelect.value;
+
+        settingsContainer.replaceChildren();
+
+        if (type === "number") {
+            settingsContainer.innerHTML = `
+                <label>
+                    Unit (optional)
+                    <input class="number-unit"
+                           type="text"
+                           placeholder="e.g. cups, kg, mg">
+                </label>
+
+                <label>
+                    Minimum (optional)
+                    <input class="number-min"
+                           type="number"
+                           step="any">
+                </label>
+
+                <label>
+                    Maximum (optional)
+                    <input class="number-max"
+                           type="number"
+                           step="any">
+                </label>
+            `;
+        }
+
+        if (type === "choice") {
+            settingsContainer.innerHTML = `
+                <label>
+                    Choices (one per line)
+                    <textarea class="choice-options"
+                              rows="4"
+                              placeholder="Small&#10;Medium&#10;Large"></textarea>
+                </label>
+            `;
+        }
+
+        if (type === "duration") {
+            settingsContainer.innerHTML = `
+                <label>
+                    Duration unit
+                    <select class="duration-unit">
+                        <option value="seconds">Seconds</option>
+                        <option value="minutes" selected>Minutes</option>
+                        <option value="hours">Hours</option>
+                        <option value="days">Days</option>
+                    </select>
+                </label>
+            `;
+        }
+    }
+
+    typeSelect.addEventListener("change", renderFieldTypeSettings);
+    renderFieldTypeSettings();
+
+
+    editor.querySelector(".cancel-field-button").addEventListener("click", () => {
+        editor.remove();
+    });
+
+    editor.querySelector(".save-field-button").addEventListener("click", () => {
+        const label = editor.querySelector(".field-name-input").value.trim();
+        const type = editor.querySelector(".field-type-input").value;
+        const required = editor.querySelector(".field-required-input").checked;
+
+        if (!label) {
+            editor.querySelector(".field-name-input").focus();
+            return;
+        }
+
+
+        const field = {
+            id: crypto.randomUUID(),
+            label,
+            type,
+            required
+        };
+
+        if (type === "number") {
+            field.unit = editor.querySelector(".number-unit").value.trim();
+
+            const minInput = editor.querySelector(".number-min").value;
+            const maxInput = editor.querySelector(".number-max").value;
+
+            field.min = minInput === "" ? null : Number(minInput);
+            field.max = maxInput === "" ? null : Number(maxInput);
+
+            if (
+                field.min !== null &&
+                field.max !== null &&
+                field.min > field.max
+            ) {
+                showToast("Minimum cannot exceed maximum");
+                return;
+            }
+        }
+
+        if (type === "choice") {
+            field.options = editor.querySelector(".choice-options").value
+                .split("\n")
+                .map(option => option.trim())
+                .filter(Boolean);
+
+            if (field.options.length === 0) {
+                showToast("Add at least one choice");
+                return;
+            }
+        }
+
+        if (type === "duration") {
+            field.unit = editor.querySelector(".duration-unit").value;
+        }
+
+        customFields[mode].push(field);
+
+
+        editor.remove();
+        renderCustomFields(mode);
+    });
+
+    editor.querySelector(".field-name-input").focus();
+}
+
+eventTypeDialog.querySelector(".add-field-button").addEventListener("click", () => {
+    openAddFieldEditor("create");
+});
+
+editEventDialog.querySelector(".add-field-button").addEventListener("click", () => {
+    openAddFieldEditor("edit");
+});
 
 
 function showToast(message) {
@@ -104,6 +367,11 @@ function openEditEvent(type) {
 
   document.getElementById("editEventHorizon").value = horizon.value;
   document.getElementById("editEventHorizonUnit").value = horizon.unit;
+
+  customFields.edit = structuredClone(type.fieldDefinitions || []);
+  editEventDialog.querySelector(".field-editor")?.remove();
+  renderCustomFields("edit");
+
   editEventDialog.showModal();
 
 
@@ -124,10 +392,17 @@ function renderEvents() {
     name.className = "tile-name";
     name.textContent = type.name;
     tile.append(icon, name);
+
     tile.addEventListener("click", () => {
-      if (isEditMode) openEditEvent(type);
-      else logEvent(type);
-    });
+    if (isEditMode) {
+        openEditEvent(type);
+    } else if ((type.fieldDefinitions || []).length > 0) {
+        openLogEvent(type);
+    } else {
+        logEvent(type);
+    }
+});
+
     eventGrid.appendChild(tile);
   }
 
@@ -142,11 +417,162 @@ function renderEvents() {
   label.textContent = "Add event";
   addTile.append(plus, label);
   addTile.addEventListener("click", () => {
+
     eventTypeForm.reset();
+    customFields.create = [];
+    eventTypeDialog.querySelector(".field-editor")?.remove();
+    renderCustomFields("create");
     eventTypeDialog.showModal();
+
   });
   eventGrid.appendChild(addTile);
 }
+
+
+function openLogEvent(type) {
+    selectedLoggingType = type;
+    logEventForm.reset();
+    logEventFields.replaceChildren();
+
+    logEventTitle.textContent = `${type.icon || "●"} ${type.name}`;
+
+    for (const field of type.fieldDefinitions || []) {
+        const wrapper = document.createElement("div");
+        wrapper.className = "log-field";
+
+        const label = document.createElement("label");
+        label.textContent = field.label;
+
+        const inputId = `log-field-${field.id}`;
+        label.htmlFor = inputId;
+
+        let input;
+
+        if (field.type === "choice") {
+            input = document.createElement("select");
+
+            const placeholder = document.createElement("option");
+            placeholder.value = "";
+            placeholder.textContent = "Select...";
+            input.appendChild(placeholder);
+
+            for (const option of field.options || []) {
+                const choice = document.createElement("option");
+                choice.value = option;
+                choice.textContent = option;
+                input.appendChild(choice);
+            }
+        } else if (field.type === "boolean") {
+            input = document.createElement("select");
+
+            for (const [value, text] of [
+                ["", "Not specified"],
+                ["true", "Yes"],
+                ["false", "No"]
+            ]) {
+                const option = document.createElement("option");
+                option.value = value;
+                option.textContent = text;
+                input.appendChild(option);
+            }
+        } else if (field.type === "text") {
+            input = document.createElement("textarea");
+            input.rows = 3;
+        } else {
+            input = document.createElement("input");
+            input.type = "number";
+            input.step = "any";
+
+            if (field.type === "duration") {
+                input.min = "0";
+            }
+
+            if (field.type === "number") {
+                if (field.min != null) input.min = field.min;
+                if (field.max != null) input.max = field.max;
+            }
+        }
+
+        input.id = inputId;
+        input.dataset.fieldId = field.id;
+        input.dataset.fieldType = field.type;
+        input.required = field.required;
+
+        wrapper.append(label, input);
+
+        if (field.unit) {
+            const unit = document.createElement("small");
+            unit.textContent = field.unit;
+            wrapper.appendChild(unit);
+        }
+
+        logEventFields.appendChild(wrapper);
+    }
+
+    logEventDialog.showModal();
+}
+
+
+logEventForm.addEventListener("submit", async event => {
+    event.preventDefault();
+
+    if (!selectedLoggingType) return;
+
+    const values = {};
+
+    for (const field of selectedLoggingType.fieldDefinitions || []) {
+        const input = document.getElementById(`log-field-${field.id}`);
+        const raw = input.value.trim();
+
+        if (raw === "") {
+            if (field.required) {
+                input.focus();
+                return;
+            }
+            continue;
+        }
+
+        if (field.type === "boolean") {
+            values[field.id] = raw === "true";
+        } else if (field.type === "number" || field.type === "duration") {
+            values[field.id] = Number(raw);
+        } else {
+            values[field.id] = raw;
+        }
+    }
+
+    const timestamp = new Date().toISOString();
+
+    const loggedEvent = {
+        id: crypto.randomUUID(),
+        typeId: selectedLoggingType.id,
+        occurredAt: timestamp,
+        createdAt: timestamp,
+        values
+    };
+
+    try {
+        await saveEvent(loggedEvent);
+        events.push(loggedEvent);
+
+        const name = selectedLoggingType.name;
+        logEventDialog.close();
+        showToast(`${name} recorded`);
+    } catch (error) {
+        console.error(error);
+        showToast("Could not save event");
+    }
+});
+
+document.getElementById("cancelLogEvent").addEventListener("click", () => {
+    logEventDialog.close();
+});
+
+logEventDialog.addEventListener("close", () => {
+    selectedLoggingType = null;
+});
+
+
 
 async function logEvent(type) {
   const timestamp = new Date().toISOString();
@@ -200,8 +626,8 @@ eventTypeForm.addEventListener("submit", async event => {
   const eventType = {
     id: crypto.randomUUID(),
     name, icon, color: null,
-    loggingMode: "instant",
-    fieldDefinitions: [],
+    fieldDefinitions: structuredClone(customFields.create),
+    active: true,
     active: true,
     createdAt: new Date().toISOString(),
     description: document.getElementById("eventDescription").value.trim(),
@@ -228,6 +654,7 @@ editEventForm.addEventListener("submit", async event => {
   const name = editEventName.value.trim();
   if (!name) return;
 
+
   const updated = {
     ...selectedEventType,
     name,
@@ -237,6 +664,7 @@ editEventForm.addEventListener("submit", async event => {
         "editEventHorizon",
         "editEventHorizonUnit"
     ),
+    fieldDefinitions: structuredClone(customFields.edit),
     updatedAt: new Date().toISOString()
   };
 

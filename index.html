@@ -68,6 +68,16 @@
             How long might this event influence later observations?
         </p>
 
+
+        <div class="custom-fields-section">
+            <h3>Custom fields</h3>
+            <div class="field-list"></div>
+
+            <button type="button" class="add-field-button">
+                + Add field
+            </button>
+        </div>
+
         <div class="dialog-actions">
             <button type="button" id="cancelEventType" class="secondary-button">Cancel</button>
             <button type="submit" class="primary-button">Create</button>
@@ -106,6 +116,15 @@
             How long might this event influence later observations?
         </p>
 
+        <div class="custom-fields-section">
+            <h3>Custom fields</h3>
+            <div class="field-list"></div>
+
+            <button type="button" class="add-field-button">
+                + Add field
+            </button>
+        </div>
+
         <button id="deleteEventButton" class="danger-button" type="button">Delete event type</button>
         <div class="dialog-actions">
             <button id="cancelEditEvent" class="secondary-button" type="button">Cancel</button>
@@ -113,6 +132,21 @@
         </div>
     </form>
 </dialog>
+
+
+<dialog id="logEventDialog">
+    <form id="logEventForm">
+        <h2 id="logEventTitle">Record event</h2>
+
+        <div id="logEventFields"></div>
+
+        <div class="dialog-actions">
+            <button type="button" id="cancelLogEvent">Cancel</button>
+            <button type="submit">Save event</button>
+        </div>
+    </form>
+</dialog>
+
 
 <div id="toast" role="status" aria-live="polite"></div>
 </body>
